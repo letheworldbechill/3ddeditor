@@ -1,4 +1,5 @@
 import { World } from "./world.js";
+import { AppArea } from "./app.js";
 import { PortalSystem } from "./portals.js";
 
 export function main() {
