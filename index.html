@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Modulares 3D-System</title>
+
+  <!-- Three.js -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.min.js"></script>
+
+  <!-- Pointer Lock Controls (für Herumlaufen) -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.161.0/examples/js/controls/PointerLockControls.js"></script>
+
+  <style>
+    body,html { margin:0; padding:0; overflow:hidden; background:#111; }
+    #enter { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+             padding:20px 40px; background:#fff; border-radius:10px; cursor:pointer; }
+  </style>
+</head>
+<body>
+
+  <div id="enter">Klick zum Starten</div>
+
+  <script type="module">
+    import { main } from "./main.js";
+    document.getElementById("enter").onclick = () => {
+      document.getElementById("enter").style.display = "none";
+      main();
+    };
+  </script>
+</body>
+</html>

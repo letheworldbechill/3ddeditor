@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Extrem detaillierter 3D Liebherr-Mobilbagger – steuerbar</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      overflow: hidden;
+      background: radial-gradient(circle at top, #87CEEB 0, #bfe8ff 45%, #e7f5ff 100%);
+    }
+
+    #container {
+      width: 100vw;
+      height: 100vh;
+    }
+
+    #panel {
+      position: absolute;
+      left: 12px;
+      top: 12px;
+      width: 260px;
+      max-width: 80vw;
+      background: rgba(8, 10, 16, 0.92);
+      color: #f4f4f4;
+      border-radius: 14px;
+      padding: 10px 14px 12px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(8px);
+      z-index: 10;
+    }
+
+    #panel h1 {
+      font-size: 15px;
+      margin: 0 0 2px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #f7d76a;
+    }
+
+    #panel small {
+      font-size: 11px;
+      opacity: 0.75;
+    }
+
+    #panel hr {
+      border: none;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      margin: 6px 0 10px;
+    }
+
+    .slider-row {
+      margin-bottom: 8px;
+    }
+
+    .slider-row label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      margin-bottom: 2px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .slider-row span.value {
+      opacity: 0.7;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .slider-row input[type="range"] {
+      width: 100%;
+      -webkit-appearance: none;
+      appearance: none;
+      height: 4px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #444, #777);
+      outline: none;
+    }
+
+    .slider-row input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #f7d76a;
+      border: 1px solid #111;
+      box-shadow: 0 0 0 2px rgba(0,0,0,0.4);
+      cursor: pointer;
+    }
+
+    .slider-row input[type="range"]::-moz-range-thumb {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #f7d76a;
+      border: 1px solid #111;
+      cursor: pointer;
+    }
+
+    #hint {
+      font-size: 10px;
+      opacity: 0.7;
+      margin-top: 4px;
+    }
+
+    #copyright {
+      margin-top: 4px;
+      font-size: 9px;
+      opacity: 0.5;
+    }
+  </style>
+  <!-- Three.js + OrbitControls von CDN (gleich wie in deiner Datei) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+<div id="container"></div>
+
+<div id="panel">
+  <h1>LIEBHERR A 914 COMPACT</h1>
+  <small>3D-Modell (Three.js) – Gelenke steuerbar</small>
+  <hr>
+  <div class="slider-row">
+    <label>
+      Oberwagen Drehung
+      <span class="value" id="val-upper">15°</span>
+    </label>
+    <input id="slider-upper" type="range" min="-135" max="135" value="15">
+  </div>
+  <div class="slider-row">
+    <label>
+      Ausleger (Boom)
+      <span class="value" id="val-boom">30°</span>
+    </label>
+    <input id="slider-boom" type="range" min="0" max="70" value="30">
+  </div>
+  <div class="slider-row">
+    <label>
+      Stiel (Stick)
+      <span class="value" id="val-stick">-20°</span>
+    </label>
+    <input id="slider-stick" type="range" min="-80" max="40" value="-20">
+  </div>
+  <div class="slider-row">
+    <label>
+      Löffel (Bucket)
+      <span class="value" id="val-bucket">-35°</span>
+    </label>
+    <input id="slider-bucket" type="range" min="-110" max="30" value="-35">
+  </div>
+  <div id="hint">
+    Maus: Links drehen · Rechts zoomen · Mittel pannen.<br>
+    Slider: Gelenke wie beim echten Bagger.
+  </div>
+  <div id="copyright">
+    Frei nach Liebherr-Mobilbagger gebaut (kein Original-CAD).
+  </div>
+</div>
+
+<script>
+  // --- Grund-Szene ----------------------------------------------------------
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0xbfe8ff);
+  scene.fog = new THREE.Fog(0xbfe8ff, 40, 220);
+
+  const camera = new THREE.PerspectiveCamera(
+    55,
+    window.innerWidth / window.innerHeight,
+    0.1,
+    1000
+  );
+  camera.position.set(18, 10, 22);
+
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  document.getElementById('container').appendChild(renderer.domElement);
+
+  const controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.04;
+  controls.target.set(0, 4, 0);
+
+  // --- Licht ---------------------------------------------------------------
+  const hemi = new THREE.HemisphereLight(0xbfe8ff, 0x554433, 0.5);
+  scene.add(hemi);
+
+  const dir = new THREE.DirectionalLight(0xffffff, 0.9);
+  dir.position.set(35, 60, 25);
+  dir.castShadow = true;
+  dir.shadow.mapSize.set(2048, 2048);
+  dir.shadow.camera.near = 1;
+  dir.shadow.camera.far = 200;
+  dir.shadow.camera.left = -40;
+  dir.shadow.camera.right = 40;
+  dir.shadow.camera.top = 40;
+  dir.shadow.camera.bottom = -40;
+  scene.add(dir);
+
+  const ambient = new THREE.AmbientLight(0xffffff, 0.35);
+  scene.add(ambient);
+
+  // --- Materialien ---------------------------------------------------------
+  const matYellow = new THREE.MeshStandardMaterial({
+    color: 0xf2c53d,
+    metalness: 0.4,
+    roughness: 0.55
+  });
+  const matYellowDark = new THREE.MeshStandardMaterial({
+    color: 0xc08b1f,
+    metalness: 0.5,
+    roughness: 0.6
+  });
+  const matGray = new THREE.MeshStandardMaterial({
+    color: 0x50555a,
+    metalness: 0.5,
+    roughness: 0.4
+  });
+  const matDark = new THREE.MeshStandardMaterial({
+    color: 0x181a1f,
+    metalness: 0.3,
+    roughness: 0.7
+  });
+  const matBlackRubber = new THREE.MeshStandardMaterial({
+    color: 0x111111,
+    metalness: 0.1,
+    roughness: 0.9
+  });
+  const matRim = new THREE.MeshStandardMaterial({
+    color: 0xd7d9dd,
+    metalness: 0.7,
+    roughness: 0.3
+  });
+  const matGlass = new THREE.MeshPhysicalMaterial({
+    color: 0x99c7ff,
+    transparent: true,
+    opacity: 0.4,
+    roughness: 0.05,
+    metalness: 0,
+    transmission: 0.6,
+    clearcoat: 1,
+    clearcoatRoughness: 0.15
+  });
+  const matSteel = new THREE.MeshStandardMaterial({
+    color: 0xcad0d7,
+    metalness: 0.85,
+    roughness: 0.25
+  });
+  const matBucket = new THREE.MeshStandardMaterial({
+    color: 0x2a2d32,
+    metalness: 0.7,
+    roughness: 0.5
+  });
+  const matSoil = new THREE.MeshStandardMaterial({
+    color: 0x7a4c26,
+    roughness: 0.9,
+    metalness: 0.1
+  });
+  const matBeacon = new THREE.MeshStandardMaterial({
+    color: 0xffaa22,
+    emissive: 0xff8800,
+    emissiveIntensity: 0.7
+  });
+
+  // --- Boden / Umgebung ----------------------------------------------------
+  const groundGeo = new THREE.PlaneGeometry(300, 300);
+  const ground = new THREE.Mesh(groundGeo, matSoil);
+  ground.rotation.x = -Math.PI / 2;
+  ground.position.y = 0;
+  ground.receiveShadow = true;
+  scene.add(ground);
+
+  // leichte „Baustellen-Struktur“ (ein paar Hügel)
+  function createSoilMound(x, z, sx, sy, sz) {
+    const g = new THREE.SphereGeometry(1, 18, 12);
+    const m = new THREE.Mesh(g, matSoil);
+    m.position.set(x, 0.6, z);
+    m.scale.set(sx, sy, sz);
+    m.castShadow = true;
+    m.receiveShadow = true;
+    scene.add(m);
+  }
+  createSoilMound(6, -8, 7, 1.7, 5);
+  createSoilMound(-10, 4, 4, 1.2, 4);
+  createSoilMound(-3, -14, 6, 1.5, 3);
+
+  // --- Hauptgruppe Bagger --------------------------------------------------
+  const excavator = new THREE.Group();
+  scene.add(excavator);
+
+  // leichter „Atmen“-Effekt
+  excavator.position.y = 0.0;
+
+  // --- Unterwagen (Räder, Rahmen, Stützen) ---------------------------------
+  const undercarriage = new THREE.Group();
+  excavator.add(undercarriage);
+
+  // Räder
+  const wheelRadius = 1.2;
+  const wheelWidth = 0.7;
+  const wheelGeo = new THREE.CylinderGeometry(wheelRadius, wheelRadius, wheelWidth, 20);
+  const rimGeo = new THREE.CylinderGeometry(0.7, 0.7, wheelWidth * 0.6, 18);
+
+  function createWheel(x, z) {
+    const group = new THREE.Group();
+    const tire = new THREE.Mesh(wheelGeo, matBlackRubber);
+    tire.rotation.z = Math.PI / 2;
+    tire.castShadow = true;
+    tire.receiveShadow = true;
+
+    // einfache Profilringe
+    const profileGeo = new THREE.TorusGeometry(wheelRadius * 0.97, 0.05, 6, 12);
+    const profileMat = new THREE.MeshStandardMaterial({
+      color: 0x080808,
+      metalness: 0.1,
+      roughness: 0.9
+    });
+    const profile = new THREE.Mesh(profileGeo, profileMat);
+    profile.rotation.y = Math.PI / 2;
+
+    const rim = new THREE.Mesh(rimGeo, matRim);
+    rim.rotation.z = Math.PI / 2;
+
+    group.add(tire);
+    group.add(rim);
+    group.add(profile);
+
+    group.position.set(x, wheelRadius, z);
+    undercarriage.add(group);
+  }
+
+  // Vorderachse
+  createWheel(-2.2, 4);
+  createWheel(2.2, 4);
+  // Hinterachse
+  createWheel(-2.2, -4);
+  createWheel(2.2, -4);
+
+  // Hauptrahmen / Chassis
+  const chassisGeo = new THREE.BoxGeometry(4.4, 0.6, 8.6);
+  const chassis = new THREE.Mesh(chassisGeo, matDark);
+  chassis.position.set(0, wheelRadius + 0.3, 0);
+  chassis.castShadow = true;
+  chassis.receiveShadow = true;
+  undercarriage.add(chassis);
+
+  // seitliche Kotflügel
+  const fenderGeo = new THREE.BoxGeometry(0.4, 0.3, 2.8);
+  const leftFenderFront = new THREE.Mesh(fenderGeo, matDark);
+  leftFenderFront.position.set(-2.4, wheelRadius + 0.75, 4);
+  const rightFenderFront = leftFenderFront.clone();
+  rightFenderFront.position.x = 2.4;
+  const leftFenderRear = leftFenderFront.clone();
+  leftFenderRear.position.z = -4;
+  const rightFenderRear = rightFenderFront.clone();
+  rightFenderRear.position.z = -4;
+  [leftFenderFront, rightFenderFront, leftFenderRear, rightFenderRear].forEach(f => {
+    f.castShadow = true;
+    undercarriage.add(f);
+  });
+
+  // Stabilisatoren (seitliche Stützen)
+  const stabGeo = new THREE.BoxGeometry(0.35, 0.4, 2.4);
+  const stabMat = matGray;
+  const stabLeft = new THREE.Mesh(stabGeo, stabMat);
+  stabLeft.position.set(-2.6, wheelRadius + 0.2, 0);
+  const stabRight = stabLeft.clone();
+  stabRight.position.x = 2.6;
+  stabLeft.castShadow = stabRight.castShadow = true;
+  undercarriage.add(stabLeft, stabRight);
+
+  // kleine Auflagefüße
+  const footGeo = new THREE.BoxGeometry(0.7, 0.1, 1.6);
+  const footLeft = new THREE.Mesh(footGeo, matDark);
+  footLeft.position.set(-2.6, wheelRadius - 0.2, 0);
+  const footRight = footLeft.clone();
+  footRight.position.x = 2.6;
+  footLeft.castShadow = footRight.castShadow = true;
+  undercarriage.add(footLeft, footRight);
+
+  // --- Oberwagen (drehbar) -------------------------------------------------
+  const upper = new THREE.Group();
+  upper.position.set(0, wheelRadius + 0.6, 0); // sitzt auf dem Chassis
+  excavator.add(upper);
+
+  // Drehkranz
+  const turntableGeo = new THREE.CylinderGeometry(2.6, 2.6, 0.3, 22);
+  const turntable = new THREE.Mesh(turntableGeo, matDark);
+  turntable.position.y = 0.15;
+  turntable.castShadow = true;
+  turntable.receiveShadow = true;
+  upper.add(turntable);
+
+  // Hauptkörper hinten (Motorblock / Gegengewicht)
+  const bodyBackGeo = new THREE.BoxGeometry(3.8, 2.3, 3.6);
+  const bodyBack = new THREE.Mesh(bodyBackGeo, matYellow);
+  bodyBack.position.set(0, 1.45, -1.6);
+  bodyBack.castShadow = true;
+  bodyBack.receiveShadow = true;
+  upper.add(bodyBack);
+
+  // leichte Abrundung oben
+  const bodyTopGeo = new THREE.BoxGeometry(3.6, 0.6, 2.8);
+  const bodyTop = new THREE.Mesh(bodyTopGeo, matYellowDark);
+  bodyTop.position.set(0, 2.35, -1.6);
+  bodyTop.castShadow = true;
+  upper.add(bodyTop);
+
+  // Motor-Gitter
+  const grillGeo = new THREE.BoxGeometry(2.0, 1.1, 0.08);
+  const grill = new THREE.Mesh(grillGeo, matDark);
+  grill.position.set(-1.2, 1.5, -3.4);
+  upper.add(grill);
+
+  // "LIEBHERR"-Logofläche seitlich
+  const logoPlateGeo = new THREE.BoxGeometry(2.8, 0.7, 0.08);
+  const logoPlate = new THREE.Mesh(logoPlateGeo, matYellowDark);
+  logoPlate.position.set(1.4, 1.1, -2.4);
+  logoPlate.rotation.y = Math.PI / 2;
+  upper.add(logoPlate);
+
+  // Kleine „Aufkleber“ als Details
+  const warningGeo = new THREE.BoxGeometry(0.3, 0.3, 0.02);
+  const warningMat = new THREE.MeshStandardMaterial({ color: 0xffdd33 });
+  const warning = new THREE.Mesh(warningGeo, warningMat);
+  warning.position.set(1.9, 1.4, -0.8);
+  upper.add(warning);
+
+  // Kabine ----------------------------------------------------
+  const cabin = new THREE.Group();
+  cabin.position.set(-1.2, 1.3, 1.6);
+  upper.add(cabin);
+
+  const cabinBaseGeo = new THREE.BoxGeometry(2.3, 0.5, 2.6);
+  const cabinBase = new THREE.Mesh(cabinBaseGeo, matDark);
+  cabinBase.position.set(0, 0.25, 0);
+  cabin.add(cabinBase);
+
+  const cabinBodyGeo = new THREE.BoxGeometry(2.1, 2.0, 2.3);
+  const cabinBody = new THREE.Mesh(cabinBodyGeo, matYellow);
+  cabinBody.position.set(0, 1.25, 0);
+  cabin.add(cabinBody);
+
+  // Frontscheibe
+  const frontGlassGeo = new THREE.BoxGeometry(1.7, 1.5, 0.08);
+  const frontGlass = new THREE.Mesh(frontGlassGeo, matGlass);
+  frontGlass.position.set(0, 1.45, 1.25);
+  cabin.add(frontGlass);
+
+  // Seitenscheiben
+  const sideGlassGeo = new THREE.BoxGeometry(0.06, 1.5, 1.8);
+  const leftGlass = new THREE.Mesh(sideGlassGeo, matGlass);
+  leftGlass.position.set(-1.05, 1.45, 0);
+  const rightGlass = leftGlass.clone();
+  rightGlass.position.x = 1.05;
+  cabin.add(leftGlass, rightGlass);
+
+  // kleines Dach
+  const cabinRoofGeo = new THREE.BoxGeometry(2.3, 0.2, 2.5);
+  const cabinRoof = new THREE.Mesh(cabinRoofGeo, matDark);
+  cabinRoof.position.set(0, 2.35, 0);
+  cabin.add(cabinRoof);
+
+  // Spiegel
+  const mirrorGeo = new THREE.BoxGeometry(0.08, 0.5, 0.9);
+  const mirror = new THREE.Mesh(mirrorGeo, matSteel);
+  mirror.position.set(-1.25, 1.6, 1.0);
+  cabin.add(mirror);
+
+  // Rundumleuchte
+  const beaconGeo = new THREE.CylinderGeometry(0.12, 0.12, 0.3, 12);
+  const beacon = new THREE.Mesh(beaconGeo, matBeacon);
+  beacon.position.set(0.4, 2.6, 0.8);
+  beacon.castShadow = true;
+  cabin.add(beacon);
+
+  // Sitz / Joysticks innen
+  const seatGeo = new THREE.BoxGeometry(0.6, 0.3, 0.6);
+  const seat = new THREE.Mesh(seatGeo, matDark);
+  seat.position.set(0, 1.0, -0.1);
+  cabin.add(seat);
+
+  const backGeo = new THREE.BoxGeometry(0.6, 0.8, 0.2);
+  const back = new THREE.Mesh(backGeo, matDark);
+  back.position.set(0, 1.4, -0.2);
+  cabin.add(back);
+
+  // Innen-Joysticks
+  const joyGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.4, 6);
+  const joyMat = matSteel;
+  const joyL = new THREE.Mesh(joyGeo, joyMat);
+  joyL.position.set(-0.25, 1.1, 0.2);
+  const joyR = joyL.clone();
+  joyR.position.x = 0.25;
+  cabin.add(joyL, joyR);
+
+  cabin.traverse(o => {
+    if (o.isMesh) {
+      o.castShadow = true;
+      o.receiveShadow = true;
+    }
+  });
+
+  // --- Ausleger / Arm / Löffel ---------------------------------------------
+
+  // Pivots & Längen
+  const boomLength = 6.5;
+  const stickLength = 5.0;
+
+  // Gruppe für den Hauptausleger (Boom)
+  const boomGroup = new THREE.Group();
+  boomGroup.position.set(0.9, 2.3, 0.6); // Schwenkpunkt vorne am Oberwagen
+  upper.add(boomGroup);
+
+  // Boom-Geometrie (leicht keilförmig)
+  const boomGeo = new THREE.BoxGeometry(0.9, 0.9, boomLength);
+  const boomMesh = new THREE.Mesh(boomGeo, matYellow);
+  boomMesh.position.z = boomLength / 2;
+  boomMesh.castShadow = true;
+  boomMesh.receiveShadow = true;
+  boomGroup.add(boomMesh);
+
+  // Oberkante für Lichtkante
+  const boomEdgeGeo = new THREE.BoxGeometry(0.04, 0.12, boomLength * 0.9);
+  const boomEdgeMat = new THREE.MeshStandardMaterial({
+    color: 0xffe9a0,
+    metalness: 0.3,
+    roughness: 0.4
+  });
+  const boomEdge = new THREE.Mesh(boomEdgeGeo, boomEdgeMat);
+  boomEdge.position.set(0.47, 0.35, boomLength / 2);
+  boomGroup.add(boomEdge);
+
+  // Zylinder für Boom
+  const boomCylinderGroup = new THREE.Group();
+  upper.add(boomCylinderGroup);
+
+  function createHydraulicCylinder(length) {
+    const group = new THREE.Group();
+    const tubeGeo = new THREE.CylinderGeometry(0.18, 0.18, length, 10);
+    const rodGeo = new THREE.CylinderGeometry(0.11, 0.11, length * 0.9, 10);
+
+    const tube = new THREE.Mesh(tubeGeo, matSteel);
+    const rod = new THREE.Mesh(rodGeo, matSteel);
+    tube.castShadow = rod.castShadow = true;
+
+    tube.position.y = length / 2;
+    rod.position.y = -length * 0.45;
+
+    group.add(tube);
+    group.add(rod);
+
+    return group;
+  }
+
+  const boomCylinder = createHydraulicCylinder(3.3);
+  // fester Punkt am Oberwagen
+  boomCylinder.position.set(0.1, 2.0, -0.3);
+  boomCylinder.rotation.x = -Math.PI / 4;
+  boomCylinderGroup.add(boomCylinder);
+
+  // Stielgruppe (Stick)
+  const stickGroup = new THREE.Group();
+  stickGroup.position.set(0, 0, boomLength); // Ende des Booms
+  boomGroup.add(stickGroup);
+
+  const stickGeo = new THREE.BoxGeometry(0.8, 0.8, stickLength);
+  const stickMesh = new THREE.Mesh(stickGeo, matYellow);
+  stickMesh.position.z = stickLength / 2;
+  stickMesh.castShadow = true;
+  stickMesh.receiveShadow = true;
+  stickGroup.add(stickMesh);
+
+  const stickEdge = new THREE.Mesh(
+    new THREE.BoxGeometry(0.04, 0.1, stickLength * 0.9),
+    boomEdgeMat
+  );
+  stickEdge.position.set(0.42, 0.32, stickLength / 2);
+  stickGroup.add(stickEdge);
+
+  // Zylinder für Stick
+  const stickCylinderGroup = new THREE.Group();
+  boomGroup.add(stickCylinderGroup);
+
+  const stickCylinder = createHydraulicCylinder(2.7);
+  stickCylinder.position.set(-0.3, 0.0, boomLength * 0.7);
+  stickCylinder.rotation.x = -Math.PI / 5;
+  stickCylinderGroup.add(stickCylinder);
+
+  // Bucket-Gruppe
+  const bucketGroup = new THREE.Group();
+  bucketGroup.position.set(0, 0, stickLength); // Ende des Sticks
+  stickGroup.add(bucketGroup);
+
+  const bucketBodyGeo = new THREE.BoxGeometry(1.6, 1.2, 1.6);
+  const bucketBody = new THREE.Mesh(bucketBodyGeo, matBucket);
+  bucketBody.position.set(0, -0.6, 0.1);
+  bucketBody.castShadow = true;
+  bucketBody.receiveShadow = true;
+  bucketGroup.add(bucketBody);
+
+  // Runde Innenkante
+  const bucketCurveGeo = new THREE.CylinderGeometry(0.8, 0.8, 1.4, 12, 1, true);
+  const bucketCurve = new THREE.Mesh(bucketCurveGeo, matBucket);
+  bucketCurve.rotation.x = Math.PI / 2;
+  bucketCurve.position.set(0, -0.4, 0.6);
+  bucketGroup.add(bucketCurve);
+
+  // Zähne
+  const toothGeo = new THREE.BoxGeometry(0.25, 0.4, 0.4);
+  for (let i = -1; i <= 1; i++) {
+    const tooth = new THREE.Mesh(toothGeo, matSteel);
+    tooth.position.set(i * 0.45, -1.0, 0.9);
+    tooth.castShadow = true;
+    bucketGroup.add(tooth);
+  }
+
+  // Zylinder für Bucket
+  const bucketCylinderGroup = new THREE.Group();
+  stickGroup.add(bucketCylinderGroup);
+
+  const bucketCylinder = createHydraulicCylinder(1.6);
+  bucketCylinder.position.set(0.45, -0.2, stickLength * 0.7);
+  bucketCylinder.rotation.x = -Math.PI / 3;
+  bucketCylinderGroup.add(bucketCylinder);
+
+  // alles, was wir dem Arm hinzugefügt haben, soll Schatten werfen
+  [boomGroup, stickGroup, bucketGroup].forEach(group => {
+    group.traverse(o => {
+      if (o.isMesh) {
+        o.castShadow = true;
+        o.receiveShadow = true;
+      }
+    });
+  });
+
+  // --- Kleine Oberwagen-Details --------------------------------------------
+  // Handlauf
+  const railGeo = new THREE.CylinderGeometry(0.05, 0.05, 2.6, 10);
+  const rail = new THREE.Mesh(railGeo, matSteel);
+  rail.rotation.z = Math.PI / 2;
+  rail.position.set(1.9, 2.1, -0.6);
+  upper.add(rail);
+
+  // Arbeitsscheinwerfer vorne
+  const lampGeo = new THREE.BoxGeometry(0.3, 0.25, 0.2);
+  const lampMat = new THREE.MeshStandardMaterial({
+    color: 0xffffff,
+    emissive: 0xffffee,
+    emissiveIntensity: 0.6
+  });
+  const lamp = new THREE.Mesh(lampGeo, lampMat);
+  lamp.position.set(0.3, 2.4, 1.8);
+  upper.add(lamp);
+
+  // --- Gelenkwinkel-Logik --------------------------------------------------
+  const sliderUpper = document.getElementById('slider-upper');
+  const sliderBoom = document.getElementById('slider-boom');
+  const sliderStick = document.getElementById('slider-stick');
+  const sliderBucket = document.getElementById('slider-bucket');
+
+  const valUpper = document.getElementById('val-upper');
+  const valBoom = document.getElementById('val-boom');
+  const valStick = document.getElementById('val-stick');
+  const valBucket = document.getElementById('val-bucket');
+
+  function degToRad(d) {
+    return d * Math.PI / 180;
+  }
+
+  function updateAngles() {
+    const upperDeg = parseFloat(sliderUpper.value);
+    const boomDeg = parseFloat(sliderBoom.value);
+    const stickDeg = parseFloat(sliderStick.value);
+    const bucketDeg = parseFloat(sliderBucket.value);
+
+    valUpper.textContent = `${upperDeg}°`;
+    valBoom.textContent = `${boomDeg}°`;
+    valStick.textContent = `${stickDeg}°`;
+    valBucket.textContent = `${bucketDeg}°`;
+
+    // Oberwagen dreht sich um Y
+    upper.rotation.y = degToRad(upperDeg);
+
+    // Boom hebt/senkt um X (negativ, damit er nach oben geht)
+    boomGroup.rotation.x = -degToRad(boomDeg);
+
+    // Stick dreht relativ zum Boom
+    stickGroup.rotation.x = -degToRad(stickDeg);
+
+    // Bucket dreht relativ zum Stick (um X – „Einklappen“)
+    bucketGroup.rotation.x = -degToRad(bucketDeg);
+  }
+
+  sliderUpper.addEventListener('input', updateAngles);
+  sliderBoom.addEventListener('input', updateAngles);
+  sliderStick.addEventListener('input', updateAngles);
+  sliderBucket.addEventListener('input', updateAngles);
+
+  updateAngles();
+
+  // --- Animation-Loop ------------------------------------------------------
+  let t = 0;
+  function animate() {
+    requestAnimationFrame(animate);
+    t += 0.016;
+
+    // leichtes „Atmen“ der Maschine
+    excavator.position.y = 0.03 * Math.sin(t * 0.7);
+
+    // Rundumleuchte pulsieren
+    beacon.material.emissiveIntensity = 0.4 + 0.3 * Math.sin(t * 6);
+
+    controls.update();
+    renderer.render(scene, camera);
+  }
+  animate();
+
+  // --- Resize --------------------------------------------------------------
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+</script>
+</body>
+</html>
