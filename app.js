@@ -49,3 +49,7 @@ export class World {
     console.log("Zurück in der Welt");
   }
 }
+
+export const AppArea = () => {
+    console.log("AppArea: Initialized and Loaded Successfully.");
+};
